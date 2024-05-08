@@ -1,11 +1,10 @@
 <?php
 
-namespace App\Http\Requests\User;
+namespace App\Http\Requests\Project;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class UpdateUserRequest extends FormRequest
+class UpdateProjectRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,11 +22,11 @@ class UpdateUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'date_of_birth' => 'required|date_format:Y-m-d',
-            'gender' => 'required|in:male,female',
-            'email' => 'required|email|unique:users,email,' . $this->user,
+            'name' => 'required|string|max:255',
+            'department' => 'required|string|max:255',
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date' => 'required|date_format:Y-m-d|after_or_equal:start_date',
+            'status' => 'required|in:pending,ongoing,completed',
         ];
     }
 
@@ -41,12 +40,5 @@ class UpdateUserRequest extends FormRequest
         return [
             'date_of_birth.date_format' => 'The :attribute must be in the format YYYY-MM-DD.',
         ];
-    }
-
-    protected function prepareForValidation()
-    {
-        $this->merge([
-            'user' => $this->route('user'),
-        ]);
     }
 }

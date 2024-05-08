@@ -24,7 +24,7 @@ class CreateUserRequest extends FormRequest
         return [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'date_of_birth' => 'required|date',
+            'date_of_birth' => 'required|date_format:Y-m-d',
             'gender' => 'required|in:male,female',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
@@ -40,7 +40,7 @@ class CreateUserRequest extends FormRequest
     public function messages()
     {
         return [
-            'date_of_birth.date' => 'The :attribute must be in the format YYYY-MM-DD.',
+            'date_of_birth.date_format' => 'The :attribute must be in the format YYYY-MM-DD.',
         ];
     }
 }
