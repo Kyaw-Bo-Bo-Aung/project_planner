@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Project\CreateProjectRequest;
 use App\Http\Requests\Project\UpdateProjectRequest;
 use App\Models\Project;
+use App\Models\Timesheet;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class ProjectController extends Controller
 {
@@ -24,10 +27,35 @@ class ProjectController extends Controller
      */
     public function store(CreateProjectRequest $request)
     {
-        $project = Project::create($request->all());
-        
+        DB::beginTransaction();
 
-        return response()->json($project, Response::HTTP_CREATED);
+        try {
+            $project = new Project();
+            $project->name = $request->input('name');
+            $project->department = $request->input('department');
+            $project->start_date = $request->input('start_date');
+            $project->end_date = $request->input('end_date');
+            $project->status = $request->input('status');
+            $project->save();
+            $timesheets = $request->input('timesheets');
+            if($timesheets) {
+                $collect = collect($timesheets)->mapWithKeys(function ($t) {
+                    return [$t['user_id'] => [
+                        'task_name' => $t['task_name'],
+                        'date' => $t['date'],
+                        'hours' => $t['hours'],
+                    ]];
+                })->all();
+                $project->users()->sync($collect);
+            }
+            DB::commit();
+
+            return response()->json($project, Response::HTTP_CREATED);
+        } catch (QueryException $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'Error saving data.'], 500);
+        }
     }
 
     /**
@@ -51,8 +79,34 @@ class ProjectController extends Controller
         if (!$project)
             return response()->json(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
 
-        $project->update($request->all());
-        return response()->json($project, Response::HTTP_OK);
+        DB::beginTransaction();
+
+        try {
+            $project->name = $request->input('name');
+            $project->department = $request->input('department');
+            $project->start_date = $request->input('start_date');
+            $project->end_date = $request->input('end_date');
+            $project->status = $request->input('status');
+            $project->update();
+            $timesheets = $request->input('timesheets');
+            if($timesheets) {
+                $collect = collect($timesheets)->mapWithKeys(function ($t) {
+                    return [$t['user_id'] => [
+                        'task_name' => $t['task_name'],
+                        'date' => $t['date'],
+                        'hours' => $t['hours'],
+                    ]];
+                })->all();
+                $project->users()->sync($collect);
+            }
+            DB::commit();
+
+            return response()->json($project, Response::HTTP_CREATED);
+        } catch (QueryException $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'Error saving data.'], 500);
+        }
     }
 
     /**
