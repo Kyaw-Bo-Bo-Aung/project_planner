@@ -14,9 +14,33 @@ class TimesheetController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Timesheet::with('user', 'project')->get();
+        $query = Timesheet::query();
+        $search = $request->query();
+        if(isset($search['task_name'])) {
+            $query->where('task_name', 'like', '%'.$search['task_name'].'%');
+        }
+
+        if(isset($search['date'])) {
+            $query->whereDate('date', $search['date']);
+        }
+
+        if(isset($search['username'])) {
+            $query->whereHas('user', function ($q) use ($search){
+                $q->where('first_name', 'like', '%'.$search['username'].'%')
+                ->orWhere('last_name', 'like', '%'.$search['username'].'%');
+            });
+        }
+
+        if(isset($search['project_name'])) {
+            $query->whereHas('project', function ($q) use ($search){
+                $q->where('name', 'like', '%'.$search['project_name'].'%');
+            });
+        }
+        
+        $timesheets = $query->with('user', )->get();
+        return response()->json($timesheets, Response::HTTP_OK);
     }
 
     /**

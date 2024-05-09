@@ -17,9 +17,39 @@ class ProjectController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Project::with('users')->get();
+        $query = Project::query();
+        $search = $request->query();
+        if(isset($search['name'])) {
+            $query->where('name', 'like', '%'.$search['name'].'%');
+        }
+
+        if(isset($search['department'])) {
+            $query->where('department', 'like', '%'.$search['department'].'%');
+        }
+
+        if(isset($search['start_date'])) {
+            $query->whereDate('start_date', $search['start_date']);
+        }
+
+        if(isset($search['end_date'])) {
+            $query->whereDate('end_date', $search['end_date']);
+        }
+
+        if(isset($search['status'])) {
+            $query->where('status', $search['status']);
+        }
+
+        if(isset($search['username'])) {
+            $query->whereHas('users', function ($q) use ($search){
+                $q->where('first_name', 'like', '%'.$search['username'].'%')
+                ->orWhere('last_name', 'like', '%'.$search['username'].'%');
+            });
+        }
+
+        $projects = $query->with('users')->get();
+        return response()->json($projects, Response::HTTP_OK);
     }
 
     /**

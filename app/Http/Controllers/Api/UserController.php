@@ -16,14 +16,32 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('projects', 'timesheets')->get();
-        // $users->map(function($user) {
-        //     $user['task_name'] = $user->timesheets;
-        //     return $user;
-        // });
-        return $users;
+        $query = User::query();
+        $search = $request->query();
+        if(isset($search['first_name'])) {
+            $query->where('first_name', 'like', '%'.$search['first_name'].'%');
+        }
+
+        if(isset($search['last_name'])) {
+            $query->where('last_name', 'like', '%'.$search['last_name'].'%');
+        }
+
+        if(isset($search['date_of_birth'])) {
+            $query->whereDate('date_of_birth', $search['date_of_birth']);
+        }
+
+        if(isset($search['gender'])) {
+            $query->where('gender', $search['gender']);
+        }
+
+        if(isset($search['email'])) {
+            $query->where('email', 'like', '%'.$search['email'].'%');
+        }
+
+        $users = $query->with('projects')->get();
+        return response()->json($users, Response::HTTP_OK);
     }
 
     /**
