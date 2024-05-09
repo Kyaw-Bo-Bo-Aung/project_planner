@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('department');
             $table->date('start_date');
             $table->date('end_date');
-            $table->string('status');
+            $table->tinyInteger('status');
             $table->timestamps();
         });
     }
