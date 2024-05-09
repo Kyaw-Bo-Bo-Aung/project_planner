@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\CreateUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -36,24 +38,16 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(User $user)
     {
-        $user = User::with('projects')->find($id);
-        if (!$user)
-            return response()->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
-        
-        return response()->json($user);
+        return $user->load('projects');
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateUserRequest $request, string $id)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $user = User::find($id);
-        if (!$user)
-            return response()->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
-
         $user->update($request->all());
         return response()->json($user, Response::HTTP_OK);
     }
@@ -61,14 +55,17 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(User $user)
     {
-        $user = User::find($id);
-        if (!$user)
-            return response()->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
-
-        $user->timesheets()->delete();
-        $user->delete();
-        return response()->json("Deleted successfully", Response::HTTP_OK);
+        DB::beginTransaction();
+        try {
+            $user->timesheets()->delete();
+            $user->delete();
+            DB::commit();            
+            return response()->json("Deleted successfully", Response::HTTP_OK);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Error deleting data.'], 500);
+        }
     }
 }

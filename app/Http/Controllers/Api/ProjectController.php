@@ -61,24 +61,16 @@ class ProjectController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Project $project)
     {
-        $project = Project::with('users')->find($id);
-        if (!$project)
-            return response()->json(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
-        
-        return response()->json($project);
+        return $project->load('users');
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProjectRequest $request, string $id)
+    public function update(UpdateProjectRequest $request, Project $project)
     {
-        $project = Project::find($id);
-        if (!$project)
-            return response()->json(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
-
         DB::beginTransaction();
 
         try {
@@ -112,14 +104,17 @@ class ProjectController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Project $project)
     {
-        $project = Project::find($id);
-        if (!$project)
-            return response()->json(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
-
-        $project->timesheets()->delete();
-        $project->delete();
-        return response()->json("Deleted successfully", Response::HTTP_OK);
+        DB::beginTransaction();
+        try {
+            $project->timesheets()->delete();
+            $project->delete();
+            DB::commit();            
+            return response()->json("Deleted successfully", Response::HTTP_OK);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Error deleting data.'], 500);
+        }
     }
 }

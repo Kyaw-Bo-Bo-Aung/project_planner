@@ -38,24 +38,16 @@ class TimesheetController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Timesheet $timesheet)
     {
-        $timesheet = Timesheet::with('user', 'project')->find($id);
-        if (!$timesheet)
-            return response()->json(['error' => 'Timesheet not found'], Response::HTTP_NOT_FOUND);
-
-        return response()->json($timesheet);
+        return $timesheet->load('user', 'project');
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateTimesheetRequest $request, string $id)
+    public function update(UpdateTimesheetRequest $request, Timesheet $timesheet)
     {
-        $timesheet = Timesheet::find($id);
-        if (!$timesheet)
-            return response()->json(['error' => 'Timesheet not found'], Response::HTTP_NOT_FOUND);
-
         $timesheet->task_name = $request->input('task_name');
         $timesheet->date = $request->input('date');
         $timesheet->hours = $request->input('hours');
@@ -68,12 +60,8 @@ class TimesheetController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Timesheet $timesheet)
     {
-        $timesheet = Timesheet::find($id);
-        if (!$timesheet)
-            return response()->json(['error' => 'timesheet not found'], Response::HTTP_NOT_FOUND);
-
         $timesheet->delete();
         return response()->json("Deleted successfully", Response::HTTP_OK);
     }
